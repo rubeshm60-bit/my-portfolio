@@ -36,7 +36,7 @@ app.use((err, req, res, next) => {
 });
 
 // MongoDB Connection & Server Start
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://rubeshm60_db_user:aiKdifACQY4QsMZe@cluster0.og4crwa.mongodb.net/?appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/3d-portfolio';
 
 // Set strictQuery to prepare for Mongoose v7+
 mongoose.set('strictQuery', false);
