@@ -41,18 +41,55 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/3d-portfol
 // Set strictQuery to prepare for Mongoose v7+
 mongoose.set('strictQuery', false);
 
+// Improved connection monitoring
+mongoose.connection.on('connecting', () => {
+    console.log('📡 Attempting to connect to MongoDB...');
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('✅ MongoDB Connected Successfully');
+    console.log(`   Database: ${mongoose.connection.name}`);
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error('   Full error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️ MongoDB Disconnected');
+});
+
+mongoose.connection.on('reconnected', () => {
+    console.log('🔄 MongoDB Reconnected');
+});
+
 console.log('Connecting to MongoDB at:', MONGO_URI);
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 5000, // 5 second timeout
+    socketTimeoutMS: 45000,
+})
     .then(() => {
-        console.log('Connected to MongoDB successfully');
+        console.log('✅ Initial MongoDB connection successful');
     })
     .catch((err) => {
-        console.warn('⚠️ MongoDB Connection Failed:', err.message);
-        console.warn('⚠️ Server will run with an in-memory fallback database for demonstration.');
+        console.error('❌ MongoDB Connection Failed:', err.message);
+        console.warn('⚠️ Server will run with an in-memory fallback database.');
+        console.warn('⚠️ New leads will NOT be persisted to the database.');
+        console.warn('');
+        console.warn('🔧 Troubleshooting Steps:');
+        console.warn('1. Verify MongoDB Atlas cluster is running (not paused)');
+        console.warn('2. Check Network Access in Atlas - add your IP or 0.0.0.0/0');
+        console.warn('3. Verify database user credentials in Database Access');
+        console.warn('4. Check firewall settings on your machine');
     })
     .finally(() => {
         // Start server regardless of DB connection (fallback active if connection failed)
         app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+            const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected (Using Memory Fallback)';
+            console.log('');
+            console.log(`🚀 Server is running on port ${PORT}`);
+            console.log(`📊 Database Status: ${dbStatus}`);
+            console.log(`🔗 Health Check: http://localhost:${PORT}/health`);
         });
     });
